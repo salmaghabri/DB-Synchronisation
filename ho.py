@@ -55,14 +55,14 @@ def consume(QUEUE_NAME):
     # channel2 = connection.channel()
     channel1.queue_declare(queue=QUEUE_NAME)
     # channel1.queue_declare(queue=QUEUE_NAME + str(2))
-    print(" [*] Waiting for messages. To exit press CTRL+C")
+    print(f" [*] Waiting for messages in {QUEUE_NAME}")
 
     def callback(ch, method, properties, body):
         received_message = body.decode('utf-8')
         print(received_message)
         p = deserialize(received_message)
         p=Product(p['id'],p['region'],p['product'],p['total'],p['date'],p['up_to_date'] ,method.routing_key)
-        print(p)
+        # print(p)
         try:
             if p.up_to_date == "add":
                 print(p.up_to_date)
@@ -74,11 +74,18 @@ def consume(QUEUE_NAME):
                 table.update()
             elif p.up_to_date == "update":
                 db_service.update_product(p.id, p.region, p.product, p.total, p.date,p.bo)
-                table.selection_set(0)
-                # table.see(selected_row)
-                table.item(table.selection(), values=(p.region, p.product, p.total, p.date),tags=("update",))
-                table.tag_configure("update", background="yellow")
+                # selected_row=table.selection_set(p.id)
+                # print(selected_row)
+                # print("hhhh",table.selection())
+                for item in table.get_children():
+                    values = table.item(item, 'values')
+                    if values[0] == p.region:  # replace `target_id` with the 
+                        # found the item, do something with it
+                        print(values[0])
+                        table.item(item, values=(p.region, p.product, p.total, p.date),tags=("update",))
+                        table.tag_configure("update", background="yellow")
                 table.update()
+                
             elif p.up_to_date == "delete":
                 id = db_service.get_product_id(p.region,p.product,p.total,p.date, method.routing_key)
                 db_service.delete_product(id)
@@ -94,6 +101,12 @@ def consume(QUEUE_NAME):
 def deserialize(message):
     return json.loads(message)
 
+def worker():
+        table.update()
+
+
 
 if __name__ == '__main__':
+    # render_thread = threading.Thread(target=worker)
     main()
+    # tk.mainloop()

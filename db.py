@@ -26,6 +26,9 @@ class DBService:
         self.cursor.execute(create_query)
         self.conn.commit()
         print("Product table created successfully")
+        
+
+
 
     def insert_product(self,id, region, product, total, date,bo):
         insert_query = "INSERT INTO product (id,region, product, total, date ,bo) VALUES (%s,%s, %s, %s, %s, %s)"
