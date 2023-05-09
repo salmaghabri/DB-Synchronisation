@@ -1,5 +1,6 @@
 import json
 import threading
+import time
 import pika
 import tkinter as tk
 from tkinter import ttk
@@ -84,7 +85,7 @@ def consume(QUEUE_NAME):
                 table.update()
                 
             elif p.up_to_date == "delete":
-                print("salut")
+                # print("salut")
                 db_service.delete_product(p.id)
                 for item in table.get_children():
                     values = table.item(item, 'values')
@@ -92,6 +93,10 @@ def consume(QUEUE_NAME):
                         print(values[0])
                         table.item(item, values=(p.region, p.product, p.total, p.date),tags=("delete",))
                         table.tag_configure("delete", background="red")
+                        time.sleep(3)
+                        table.delete(item) 
+
+
                 table.update()
 
 

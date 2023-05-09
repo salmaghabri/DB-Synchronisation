@@ -232,7 +232,6 @@ class DBService:
 
     def deleteButtonClicked(self,id):
         self.update_product_up_to_date(id,"delete")
-        time.sleep(10)
         self.delete_product(id)
         self.show_items()
 
