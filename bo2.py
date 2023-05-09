@@ -1,50 +1,38 @@
 import json
+import threading
 import mysql.connector
 import pika
-import schedule
 import time
-from Product import Product
-from DBService import DBService
 
-def getAllProducts():
+from Product import Product
+from DBService import DBService;
+
+def getAllProducts(mycursor):
     select_all_query="select * from product"
     products=[]
     mycursor.execute(select_all_query)
     rows=mycursor.fetchall()
     for row in rows: 
-        id,region,product,total,date,up_to_date= row
-        p=Product(id,region,product,total,date,up_to_date)
+        id,region,product,total,date,up_to_date,bo= row
+        p=Product(id,region,product,total,date,up_to_date,bo)
         products.append(p)
 
     return products
 
 
 
-def get_products_to_send():
+def get_products_to_send(mycursor):
     select_to_send=f"select * from product where up_to_date <> 'ok'  "
     products=[]
     mycursor.execute(select_to_send)
     rows=mycursor.fetchall()
     for row in rows: 
-        id,region,product,total,date,up_to_date, bo= row
+        id,region,product,total,date,up_to_date,bo= row
         p=Product(id,region,product,total,date,up_to_date,bo)
         products.append(p)
+        print(p)
     return products
-    
 
-
-db_host = "localhost"
-db_user = "root"
-db_name = "bo2"
-db_pass = "root"
-mydb = mysql.connector.connect(
-    host=db_host,
-    user=db_user,
-    database=db_name,
-    port= "3307",
-)
-mycursor = mydb.cursor()
-db= DBService("bo2")
 
 
 
@@ -57,19 +45,35 @@ channel.confirm_delivery()
 
 #polling function
 def polling_func():
-    print("polling function running...")
-    ps=get_products_to_send()
+    mydb= DBService("bo2")
+    mycursor = mydb.cursor
+    print("looking for updates...")
+    ps=get_products_to_send(mycursor)
     for p in ps:
         json_date = p.get_date().strftime('%Y-%m-%d')
         p.set_date(json_date)
-        channel.basic_publish(exchange='', routing_key='bo2', body=json.dumps(p.__dict__))
-        print(f'product of id { p.get_id()} sent ')
-        p.set_up_to_date('ok')
-        mycursor.execute(f"UPDATE product SET up_to_date ='ok'  where id= { p.get_id()}" )
-        mydb.commit()
+        
+        try:
+            channel.basic_publish(exchange='', routing_key='bo2', body=json.dumps(p.__dict__))
+            print(f'product of id { p.get_id()} sent ')
+            p.set_up_to_date('ok')
+            mycursor.execute(f"UPDATE product SET up_to_date ='ok'  where id= '{ p.get_id()}' " )
+            mydb.conn.commit()
+            print(p.up_to_date)
+        except pika.exceptions.UnroutableError:
+            print('Message could not be confirmed')
+        
+        
+
+def poll():
+    while True:
+        polling_func()
+        time.sleep(5)
 
 
-while True:
-    polling_func()
-    time.sleep(10)
 
+
+poll_thread = threading.Thread(target=poll)
+poll_thread.start()
+db=DBService("bo2")
+db.RenderTable(["bo","2"])
