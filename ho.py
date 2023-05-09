@@ -85,7 +85,7 @@ def consume(QUEUE_NAME):
                 table.update()
                 
             elif p.up_to_date == "delete":
-                # print("salut")
+                print("salut")
                 db_service.delete_product(p.id)
                 for item in table.get_children():
                     values = table.item(item, 'values')
