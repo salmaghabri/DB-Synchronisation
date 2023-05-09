@@ -74,22 +74,24 @@ def consume(QUEUE_NAME):
                 table.update()
             elif p.up_to_date == "update":
                 db_service.update_product(p.id, p.region, p.product, p.total, p.date,p.bo)
-                # selected_row=table.selection_set(p.id)
-                # print(selected_row)
-                # print("hhhh",table.selection())
+                
                 for item in table.get_children():
                     values = table.item(item, 'values')
-                    if values[0] == p.region:  # replace `target_id` with the 
-                        # found the item, do something with it
+                    if values[0] == p.region:  
                         print(values[0])
                         table.item(item, values=(p.region, p.product, p.total, p.date),tags=("update",))
                         table.tag_configure("update", background="yellow")
                 table.update()
                 
             elif p.up_to_date == "delete":
-                id = db_service.get_product_id(p.region,p.product,p.total,p.date, method.routing_key)
-                db_service.delete_product(id)
-                table.delete(table.selection())
+                print("salut")
+                db_service.delete_product(p.id)
+                for item in table.get_children():
+                    values = table.item(item, 'values')
+                    if values[0] == p.region:  
+                        print(values[0])
+                        table.item(item, values=(p.region, p.product, p.total, p.date),tags=("delete",))
+                        table.tag_configure("delete", background="red")
                 table.update()
 
 

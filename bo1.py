@@ -1,10 +1,11 @@
 import json
+import threading
 import mysql.connector
 import pika
-import schedule
 import time
 
-from Product import Product;
+from Product import Product
+from DBService import DBService;
 
 def getAllProducts(mycursor):
     select_all_query="select * from product"
@@ -32,10 +33,6 @@ def get_products_to_send(mycursor):
         print(p)
     return products
 
-db_host = "localhost"
-db_user = "root"
-db_name = "bo1"
-db_pass="root"
 
 
 
@@ -44,28 +41,39 @@ connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 channel.queue_declare(queue='bo1')
 
-
+channel.confirm_delivery()
 
 #polling function
 def polling_func():
-    mydb = mysql.connector.connect(
-    host=db_host,
-    user=db_user,
-    database=db_name,
-    port= "3307"
-)
-    mycursor = mydb.cursor()
-    print("polling function running...")
+    mydb= DBService("bo1")
+    mycursor = mydb.cursor
+    print("looking for updates...")
     ps=get_products_to_send(mycursor)
     for p in ps:
         json_date = p.get_date().strftime('%Y-%m-%d')
         p.set_date(json_date)
-        channel.basic_publish(exchange='', routing_key='bo1', body=json.dumps(p.__dict__))
-        print(f'product of id { p.get_id()} sent ')
-        p.set_up_to_date('ok')
-        mycursor.execute(f"UPDATE product SET up_to_date ='ok'  where id= '{ p.get_id()}' " )
-        mydb.commit()
-while True:
-    polling_func()
-    time.sleep(10)
+        
+        try:
+            channel.basic_publish(exchange='', routing_key='bo1', body=json.dumps(p.__dict__))
+            print(f'product of id { p.get_id()} sent ')
+            p.set_up_to_date('ok')
+            mycursor.execute(f"UPDATE product SET up_to_date ='ok'  where id= '{ p.get_id()}' " )
+            mydb.conn.commit()
+            print(p.up_to_date)
+        except pika.exceptions.UnroutableError:
+            print('Message could not be confirmed')
+        
+        
 
+def poll():
+    while True:
+        polling_func()
+        time.sleep(5)
+
+
+
+
+poll_thread = threading.Thread(target=poll)
+poll_thread.start()
+db=DBService("bo1")
+db.RenderTable(["bo","1"])

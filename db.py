@@ -74,3 +74,13 @@ class DBService:
             products.append(p)
 
         return products
+    
+
+    def create_update_trigger(mycursor):
+        q="""CREATE if not exists TRIGGER update_product_trigger
+    BEFORE UPDATE ON product
+    FOR EACH ROW
+    SET NEW.up_to_date = 'update';"""
+        mycursor.execute(q)
+
+

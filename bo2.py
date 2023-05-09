@@ -4,6 +4,7 @@ import pika
 import schedule
 import time
 from Product import Product
+from DBService import DBService
 
 def getAllProducts():
     select_all_query="select * from product"
@@ -43,6 +44,7 @@ mydb = mysql.connector.connect(
     port= "3307",
 )
 mycursor = mydb.cursor()
+db= DBService("bo2")
 
 
 
@@ -51,7 +53,7 @@ connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 channel.queue_declare(queue='bo2')
 
-
+channel.confirm_delivery()
 
 #polling function
 def polling_func():
