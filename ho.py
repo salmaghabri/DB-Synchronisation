@@ -14,7 +14,11 @@ from Product import Product;
 frame = tk.Tk()
 frame.title("Head Office")
 table = ttk.Treeview(frame)
+<<<<<<< HEAD
 db_service = DBService("localhost", "root" , "", "ho",3307)
+=======
+db_service = DBService("localhost", "root" , "", "ho",3306)
+>>>>>>> d4f50bf (ah bon)
 def main():
     # UI
 

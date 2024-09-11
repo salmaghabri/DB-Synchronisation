@@ -10,7 +10,7 @@ from Product import Product
 
 
 class DBService:
-    def __init__(self, database, host="localhost", user="root", password="", port="3307"):
+    def __init__(self, database, host="localhost", user="root", password="", port="3306"):
         self.conn = mysql.connector.connect(
             host=host,
             user=user,
